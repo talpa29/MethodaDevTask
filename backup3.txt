@@ -1,0 +1,238 @@
+<template>
+  <div class="jumbotron vertical-center">
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <h1 class="text-center bg-primary text-white" style="border-radius:10px"> Status List </h1>
+          <hr><br> 
+
+          <!--Alarat Message-->
+          <button type="button" class="btn btn-success btn-sm" v-b-modal.status-modal>Add Status</button>
+          <br><br>
+          <table class="table table-hover">
+            <!--Table Head-->
+            <thead>
+              <tr>
+                <!--Table Header cells-->
+                <th scope="col">Name</th>
+                <th scope="col">Type</th>
+                <th scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+                  <tr v-for="status, index in status" :key="index">
+                  <td>{{status.name}}</td>
+                  <td>{{status.type}}</td>
+                  <td>
+                    <div class="btn-group" role="group">
+                      <button
+                        type="button"
+                        class="btn btn-info btn-sm"
+                        v-b-modal.status-update-modal
+                        @click="editStatus(status)"> Update </button>
+                      <button type="button" class="btn btn-danger btn-sm" @click="deleteStatus(status)">Delete</button>
+                    </div>
+                  </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!--First Modal-->
+      <b-modal ref="addStatusModal"
+             id="status-modal"
+             title="Add a new staus"
+             hide-backdrop hide-footer>
+        <b-form @submit="onSubmit" @reset="onReset" class="w-100">
+        <b-form-group id="form-name-group"
+                    label="name:"
+                    label-for="form-name-input">
+          <b-form-input id="form-name-input"
+                        type="text"
+                        v-model="addStatusForm.name"
+                        required
+                        placeholder="Enter name">
+          </b-form-input>
+        </b-form-group>
+        <b-form-group id="form-type-group"
+                      label="type:"
+                      label-for="form-type-input">
+            <b-form-input id="form-type-input"
+                          type="text"
+                          v-model="addStatusForm.type"
+                          required
+                          placeholder="Enter type">
+            </b-form-input>
+        </b-form-group>
+          <b-button type="submit" variant="primary">Submit</b-button>
+          <b-button type="reset" variant="danger">Reset</b-button>
+      </b-form>
+    </b-modal>
+    <!--End of First Modal-->
+
+    <!-- Start of Modal 2 -->
+    <b-modal ref="editStatusModal"
+          id="status-update-modal"
+          title="Update" hide-backdrop
+          hide-footer>
+    <b-form @submit="onSubmitUpdate" @reset="onResetUpdate" class="w-100">
+      
+    <b-form-group id="form-name-edit-group"
+                  label="name:"
+                  label-for="form-name-edit-input">
+        <b-form-input id="form-name-edit-input"
+                      type="text"
+                      v-model="editForm.name"
+                      required
+                      placeholder="Enter name">
+        </b-form-input>
+      </b-form-group>
+
+      <b-form-group id="form-type-edit-group"
+                    label="type:"
+                    label-for="form-type-edit-input">
+          <b-form-input id="form-type-edit-input"
+                        type="text"
+                        v-model="editForm.type"
+                        required
+                        placeholder="Enter type">
+          </b-form-input>
+        </b-form-group>
+
+      <b-button-group>
+        <b-button type="submit" variant="outline-info">Update</b-button>
+        <b-button type="reset" variant="outline-danger">Cancel</b-button>
+      </b-button-group>
+    </b-form>
+  </b-modal>
+  <!-- end of modal 2 -->
+
+    </div>
+  </div>
+</template>
+
+<script>
+import axios from 'axios';
+export default{
+  data() {
+    return {
+      status: [],
+      addStatusForm: {
+        name: '',
+        type: '',
+    },
+    editForm: {
+      id: '',
+      name: '',
+      type: '',
+    },
+    };
+  },
+
+
+  methods:{
+    getStatus(){
+      const path = 'http://localhost:5000';
+      axios.get(path)
+      .then((res) => {
+        this.status = res.data.Statuses;
+
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+    },
+    // POST function
+    addStatus(payload) {
+      const path = 'http://localhost:5000';
+      axios.post(path, payload)
+      .then(() => {
+        this.getStatus();
+      })
+      .catch((err) => {
+        console.error(err);
+        this.getStatus();
+      });
+    },
+    initForm(){
+      this.addStatusForm.name = ''
+      this.addStatusForm.type = ''
+      this.editForm.id = ''
+      this.editForm.name = ''
+      this.editForm.type = ''
+    },
+    onSubmit(evt) {
+      evt.preventDefault();
+      this.$refs.addStatusModal.hide();
+      const payload = {
+        name: this.addStatusForm.name,
+        type: this.addStatusForm.type,
+      };
+      this.addStatus(payload);
+      this.initForm();
+    },
+    onReset(evt) {
+      evt.preventDefault();
+      this.$ref.addStatusModal.hide();
+      this.initForm();
+    },
+
+    onSubmitUpdate(e) {
+      e.preventDefault();
+      this.$refs.editStatusModal.hide();
+      const payload = {
+        name: this.editForm.name,
+        type: this.editForm.type,
+      };
+      this.updateStatus(payload, this.editForm.id);
+  },
+
+    updateStatus(payload, statusID) {
+      const path = `http://localhost:5000/${statusID}`;
+      axios.put(path, payload)    
+        .then(() => {
+          this.getStatus();
+        })
+        .catch((error) => {
+          console.error(error);
+          this.getGames();
+        });
+},
+ // Handle Update Button 
+ editStatus(status) {
+  this.editForm = status;
+},
+
+onResetUpdate(e) {
+  e.preventDefault();
+  this.$refs.editStatusModal.hide();
+  this.initForm();
+  this.getStatus(); 
+},
+
+removeStatus(statusID) {
+  const path = `http://localhost:5000/${statusID}`;
+  axios.delete(path)
+    .then(() => {
+      this.getStatus();
+    })
+    .catch((error) => {
+      // eslint-disable-next-line
+      console.error(error);
+      this.getStatus();
+    });
+},
+
+// Handle Delete Button
+deleteStatus(game) {
+  this.removeStatus(game.id);
+},
+
+    
+  },
+  created() {
+    this.getStatus();
+  },
+};
+</script>
+

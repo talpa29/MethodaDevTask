@@ -1,0 +1,76 @@
+from flask import Flask, jsonify, request 
+from flask_cors import CORS
+import uuid
+
+app = Flask(__name__)
+
+app.config.from_object(__name__)
+
+CORS(app, resources={r"/*":{'origins':"*"}})
+
+
+Statuses = [
+    {
+    'id' : uuid.uuid4().hex,
+    'name' : 'gever',
+    'type' : 'orphan',
+    }
+]
+
+Transitions = [
+    {
+    'id' : uuid.uuid4().hex,
+    'name' : 'gever',
+    'from' : 'gever',
+    'to' : 'orphan',
+    }
+]
+
+
+@app.route('/', methods=['GET', 'POST'])
+def all_status():
+    response_object = {'status':'success'}
+    if request.method == 'POST':
+        post_data = request.get_json()
+        print(post_data)
+        Statuses.append({
+            'id' : uuid.uuid4().hex,
+            'name': post_data.get('name'),
+            'type': post_data.get('type')})
+        response_object['message'] = 'Status Added!'
+    else:
+        response_object['Statuses'] = Statuses
+    return jsonify(response_object)
+
+
+#PUT and DELETE route handler
+@app.route('/<status_id>', methods=['PUT','DELETE'])
+def single_status(status_id):
+    response_object = {'status':'success'}
+    if request.method == 'PUT':
+        post_data = request.get_json()
+        remove_status(status_id)
+        Statuses.append({
+            'id' : uuid.uuid4().hex,
+            'name': post_data.get('name'),
+            'type': post_data.get('type')})
+        response_object['message'] = 'Status updated!'
+    if request.method == 'DELETE':
+        remove_status(status_id)
+        response_object['message'] = 'Game Removed!'
+    return jsonify(response_object)
+
+def remove_status(status_id):
+    for status in Statuses:
+        if status['id'] == status_id:
+            Statuses.remove(status)
+            return True
+    return False
+
+
+
+
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
